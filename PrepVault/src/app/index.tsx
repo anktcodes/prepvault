@@ -4,60 +4,59 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Pressable,
 } from 'react-native';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import ScreenProtection from '../components/ScreenProtection';
 
-const years = ['2026', '2025', '2024', '2023', '2022'];
-
-const subjects = ['Maths', 'Computer', 'Reasoning'];
-
-function FolderList({ items }: { items: string[] }) {
-  return (
-    <View style={styles.folderList}>
-      {items.map((item) => (
-        <View key={item} style={styles.folder}>
-          <Text style={styles.folderIcon}>📁</Text>
-          <Text style={styles.folderName}>{item}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 export default function HomeScreen() {
+  const router = useRouter();
+
   return (
-    <>
-    <ScreenProtection />
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
-      <View style={styles.main}>
+    <SafeAreaView style={styles.container}>
+      <ScreenProtection />
 
-        {/* Section 1: PYQ Papers Bank */}
-        <View style={styles.section}>
-          <Text style={styles.heading}>
-            PYQ Papers Bank
-          </Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.main}>
 
-          <FolderList items={years} />
+          <Pressable
+            style={styles.section}
+            onPress={() => router.push('/pyq')}
+          >
+            <Text style={styles.heading}>
+              PYQ Papers Bank
+            </Text>
+
+            <View style={styles.folder}>
+              <Text style={styles.folderIcon}>📁</Text>
+              <Text style={styles.folderName}>
+                2026, 2025, 2024, 2023, 2022
+              </Text>
+            </View>
+          </Pressable>
+
+          <Pressable
+            style={styles.section}
+            onPress={() => router.push('/topicwise')}
+          >
+            <Text style={styles.heading}>
+              Topicwise PYQs
+            </Text>
+
+            <View style={styles.folder}>
+              <Text style={styles.folderIcon}>📁</Text>
+              <Text style={styles.folderName}>
+                Maths, Computer, Reasoning
+              </Text>
+            </View>
+          </Pressable>
+
         </View>
-
-        {/* Section 2: Topicwise PYQs */}
-        <View style={styles.section}>
-          <Text style={styles.heading}>
-            Topicwise PYQs
-          </Text>
-
-          <FolderList items={subjects} />
-        </View>
-
-      </View>
-    </ScrollView>
-
-    </>
-  
-);
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -87,10 +86,6 @@ const styles = StyleSheet.create({
     color: '#1e293b',
   },
 
-  folderList: {
-    gap: 12,
-  },
-
   folder: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -107,7 +102,7 @@ const styles = StyleSheet.create({
   },
 
   folderName: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '600',
     color: '#334155',
   },
