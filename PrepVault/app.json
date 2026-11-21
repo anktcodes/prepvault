@@ -34,13 +34,8 @@
           "imageWidth": 76
         }
       ],
-      [
-        "react-native-pdf-jsi",
-        {
-          "ocr": false,
-          "iosFileSharing": false
-        }
-      ]
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
