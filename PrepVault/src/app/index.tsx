@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import ScreenProtection from '../components/ScreenProtection';
 
 const years = ['2026', '2025', '2024', '2023', '2022'];
 
@@ -25,6 +26,8 @@ function FolderList({ items }: { items: string[] }) {
 
 export default function HomeScreen() {
   return (
+    <>
+    <ScreenProtection />
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
@@ -51,7 +54,10 @@ export default function HomeScreen() {
 
       </View>
     </ScrollView>
-  );
+
+    </>
+  
+);
 }
 
 const styles = StyleSheet.create({
