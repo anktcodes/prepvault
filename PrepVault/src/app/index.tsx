@@ -10,8 +10,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import ScreenProtection from '../components/ScreenProtection';
+import { supabase } from '../lib/supabase';
+import { Alert } from 'react-native';
+import { ZoomInRight } from 'react-native-reanimated';
 
 export default function HomeScreen() {
+
+  async function handleSignOut() {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      Alert.alert('Error', error.message);
+    }
+  }
   const router = useRouter();
 
   return (
@@ -20,6 +31,20 @@ export default function HomeScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.main}>
+          <Pressable
+            onPress={handleSignOut}
+            style={{
+              backgroundColor: '#dc2626',
+              padding: 14,
+              width: 100,
+              borderRadius: 10,
+              marginTop: 20,
+            }}
+          >
+            <Text style={{ color: '#ffffff', textAlign: 'center' }}>
+              Sign Out
+            </Text>
+          </Pressable>
 
           <Pressable
             style={styles.section}
