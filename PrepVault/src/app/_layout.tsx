@@ -1,22 +1,17 @@
+import type { Session } from "@supabase/supabase-js";
+import { Stack, useRouter, useSegments } from "expo-router";
+import { useEffect, useState } from "react";
+import { Alert } from "react-native";
+import { PremiumAccessProvider } from "../context/PremiumAccessContext";
+import { getDeviceId } from "../lib/device";
+import { supabase } from "../lib/supabase";
 
-import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
-import type { Session } from '@supabase/supabase-js';
-
-import { supabase } from '../lib/supabase';
-import { getDeviceId } from '../lib/device';
-
-type AccessState =
-  | 'loading'
-  | 'signedOut'
-  | 'checking'
-  | 'allowed';
+type AccessState = "loading" | "signedOut" | "checking" | "allowed";
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [access, setAccess] = useState<AccessState>('loading');
+  const [access, setAccess] = useState<AccessState>("loading");
 
   const router = useRouter();
   const segments = useSegments();
@@ -43,7 +38,7 @@ export default function RootLayout() {
     if (!authReady) return;
 
     if (!session) {
-      setAccess('signedOut');
+      setAccess("signedOut");
       return;
     }
 
@@ -51,25 +46,24 @@ export default function RootLayout() {
 
     async function verifyDevice() {
       try {
-        setAccess('checking');
+        setAccess("checking");
 
         const deviceId = await getDeviceId();
 
-        const { data, error } = await supabase.rpc(
-          'register_device',
-          { p_device_id: deviceId }
-        );
+        const { data, error } = await supabase.rpc("register_device", {
+          p_device_id: deviceId,
+        });
 
         if (error) throw error;
 
         if (cancelled) return;
 
         if (data === true) {
-          setAccess('allowed');
+          setAccess("allowed");
         } else {
           Alert.alert(
-            'Device not authorised',
-            'This account is already registered on another device. Please contact the PrepVault administrator.'
+            "Device not authorised",
+            "This account is already registered on another device. Please contact the PrepVault administrator.",
           );
 
           await supabase.auth.signOut();
@@ -77,11 +71,11 @@ export default function RootLayout() {
       } catch (error) {
         if (cancelled) return;
 
-        console.error('Device verification failed:', error);
+        console.error("Device verification failed:", error);
 
         Alert.alert(
-          'Verification failed',
-          'Could not verify your device. Please check your internet connection and sign in again.'
+          "Verification failed",
+          "Could not verify your device. Please check your internet connection and sign in again.",
         );
 
         await supabase.auth.signOut();
@@ -97,16 +91,23 @@ export default function RootLayout() {
 
   // Control access to application routes
   useEffect(() => {
-    if (access === 'loading' || access === 'checking') return;
+    if (access === "loading" || access === "checking") return;
 
-    const isLoginScreen = segments[0] === 'login';
+    const isLoginScreen = segments[0] === "login";
 
-    if (access === 'signedOut' && !isLoginScreen) {
-      router.replace('/login');
-    } else if (access === 'allowed' && isLoginScreen) {
-      router.replace('/');
+    if (access === "signedOut" && !isLoginScreen) {
+      router.replace("/login");
+    } else if (access === "allowed" && isLoginScreen) {
+      router.replace("/");
     }
   }, [access, segments]);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <PremiumAccessProvider
+      userId={session?.user.id ?? null}
+      enabled={access === "allowed"}
+    >
+      <Stack screenOptions={{ headerShown: false }} />
+    </PremiumAccessProvider>
+  );
 }

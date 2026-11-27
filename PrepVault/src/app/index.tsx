@@ -10,10 +10,12 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenProtection from "../components/ScreenProtection";
+import { usePremiumAccess } from "../context/PremiumAccessContext";
 import { supabase } from "../lib/supabase";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { status } = usePremiumAccess();
 
   async function handleSignOut() {
     const { error } = await supabase.auth.signOut();
@@ -33,12 +35,20 @@ export default function HomeScreen() {
             <Text style={styles.signOutText}>Sign Out</Text>
           </Pressable>
 
-          <Pressable
-            onPress={() => router.push("/upgrade" as any)}
-            style={styles.upgradeButton}
-          >
-            <Text style={styles.upgradeText}>Upgrade to Premium — ₹99</Text>
-          </Pressable>
+          {status === "paid" && (
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumText}>Premium Member ✓</Text>
+            </View>
+          )}
+
+          {status === "unpaid" && (
+            <Pressable
+              onPress={() => router.push("/upgrade" as any)}
+              style={styles.upgradeButton}
+            >
+              <Text style={styles.upgradeText}>Upgrade to Premium — ₹99</Text>
+            </Pressable>
+          )}
 
           <Pressable style={styles.section} onPress={() => router.push("/pyq")}>
             <Text style={styles.heading}>PYQ Papers Bank</Text>
@@ -69,6 +79,18 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  premiumBadge: {
+    backgroundColor: "#dcfce7",
+    padding: 14,
+    borderRadius: 10,
+    marginTop: -20,
+  },
+
+  premiumText: {
+    color: "#166534",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",

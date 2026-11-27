@@ -1,8 +1,5 @@
-
-import { Stack } from 'expo-router';
+import PremiumGate from "../../components/PremiumGate";
 
 export default function PyqLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }} />
-  );
+  return <PremiumGate />;
 }

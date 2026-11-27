@@ -1,5 +1,5 @@
-
-import { useState } from 'react';
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,38 +7,37 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { WebView } from 'react-native-webview';
-import { useRouter } from 'expo-router';
-
-import { supabase } from '../lib/supabase';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
+import { usePremiumAccess } from "../context/PremiumAccessContext";
+import { supabase } from "../lib/supabase";
 
 import {
   createPaymentOrder,
   verifyPayment,
-  type RazorpayPaymentResponse,
   type RazorpayOrder,
-} from '../lib/payments';
+  type RazorpayPaymentResponse,
+} from "../lib/payments";
 
 type CheckoutMessage =
-  | { type: 'success'; payload: RazorpayPaymentResponse }
-  | { type: 'cancel' }
-  | { type: 'failure'; message?: string };
+  | { type: "success"; payload: RazorpayPaymentResponse }
+  | { type: "cancel" }
+  | { type: "failure"; message?: string };
 
 function buildCheckoutHtml(order: RazorpayOrder, email?: string) {
   const config = {
     key: order.key_id,
     amount: order.amount,
     currency: order.currency,
-    name: 'PrepVault',
-    description: 'Lifetime Premium Access',
+    name: "PrepVault",
+    description: "Lifetime Premium Access",
     order_id: order.order_id,
-    prefill: { email: email || '' },
-    theme: { color: '#2563eb' },
+    prefill: { email: email || "" },
+    theme: { color: "#2563eb" },
   };
 
-  const configJson = JSON.stringify(config).replace(/</g, '\\u003c');
+  const configJson = JSON.stringify(config).replace(/</g, "\\u003c");
 
   return `
     <!DOCTYPE html>
@@ -85,8 +84,9 @@ function buildCheckoutHtml(order: RazorpayOrder, email?: string) {
 
 export default function UpgradeScreen() {
   const router = useRouter();
+  const { refreshPremiumAccess } = usePremiumAccess();
 
-  const [checkoutHtml, setCheckoutHtml] = useState('');
+  const [checkoutHtml, setCheckoutHtml] = useState("");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -101,13 +101,11 @@ export default function UpgradeScreen() {
 
       if (error) throw error;
 
-      setCheckoutHtml(
-        buildCheckoutHtml(newOrder, data.user?.email)
-      );
+      setCheckoutHtml(buildCheckoutHtml(newOrder, data.user?.email));
     } catch (error) {
       Alert.alert(
-        'Unable to start payment',
-        error instanceof Error ? error.message : 'Please try again.'
+        "Unable to start payment",
+        error instanceof Error ? error.message : "Please try again.",
       );
     } finally {
       setLoading(false);
@@ -123,47 +121,42 @@ export default function UpgradeScreen() {
       return;
     }
 
-    if (result.type === 'cancel') {
-      setCheckoutHtml('');
+    if (result.type === "cancel") {
+      setCheckoutHtml("");
 
-      Alert.alert(
-        'Payment cancelled',
-        'No payment was verified.'
-      );
+      Alert.alert("Payment cancelled", "No payment was verified.");
 
       return;
     }
 
-    if (result.type === 'failure') {
-      setCheckoutHtml('');
+    if (result.type === "failure") {
+      setCheckoutHtml("");
 
-      Alert.alert(
-        'Payment failed',
-        result.message || 'Please try again.'
-      );
+      Alert.alert("Payment failed", result.message || "Please try again.");
 
       return;
     }
 
-    if (result.type === 'success') {
+    if (result.type === "success") {
       try {
         setVerifying(true);
 
         await verifyPayment(result.payload);
+        await refreshPremiumAccess();
 
         setCompleted(true);
-        setCheckoutHtml('');
+        setCheckoutHtml("");
 
         Alert.alert(
-          'Payment successful',
-          'Your payment has been verified and premium access has been activated.'
+          "Payment successful",
+          "Your payment has been verified and premium access has been activated.",
         );
       } catch (error) {
         Alert.alert(
-          'Verification failed',
+          "Verification failed",
           error instanceof Error
             ? error.message
-            : 'Please contact support before attempting another payment.'
+            : "Please contact support before attempting another payment.",
         );
       } finally {
         setVerifying(false);
@@ -177,30 +170,23 @@ export default function UpgradeScreen() {
         {verifying && (
           <View style={styles.overlay}>
             <ActivityIndicator size="large" color="#2563eb" />
-            <Text style={styles.statusText}>
-              Verifying payment...
-            </Text>
+            <Text style={styles.statusText}>Verifying payment...</Text>
           </View>
         )}
 
         <WebView
           source={{
             html: checkoutHtml,
-            baseUrl: 'https://checkout.razorpay.com',
+            baseUrl: "https://checkout.razorpay.com",
           }}
-          originWhitelist={['https://*', 'http://*']}
+          originWhitelist={["https://*", "http://*"]}
           javaScriptEnabled
           domStorageEnabled
-          onMessage={(event) =>
-            handleWebViewMessage(event.nativeEvent.data)
-          }
+          onMessage={(event) => handleWebViewMessage(event.nativeEvent.data)}
           onError={() => {
-            setCheckoutHtml('');
+            setCheckoutHtml("");
 
-            Alert.alert(
-              'Checkout error',
-              'Could not load Razorpay Checkout.'
-            );
+            Alert.alert("Checkout error", "Could not load Razorpay Checkout.");
           }}
         />
       </SafeAreaView>
@@ -210,34 +196,22 @@ export default function UpgradeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>
-          PrepVault Premium
-        </Text>
+        <Text style={styles.title}>PrepVault Premium</Text>
 
         <Text style={styles.price}>₹99</Text>
 
-        <Text style={styles.subtitle}>
-          One-time payment. Lifetime access.
-        </Text>
+        <Text style={styles.subtitle}>One-time payment. Lifetime access.</Text>
 
         <View style={styles.features}>
-          <Text style={styles.feature}>
-            • PYQ Papers Bank
-          </Text>
+          <Text style={styles.feature}>• PYQ Papers Bank</Text>
 
-          <Text style={styles.feature}>
-            • Topicwise PYQs
-          </Text>
+          <Text style={styles.feature}>• Topicwise PYQs</Text>
 
-          <Text style={styles.feature}>
-            • Future premium content
-          </Text>
+          <Text style={styles.feature}>• Future premium content</Text>
         </View>
 
         {completed ? (
-          <Text style={styles.success}>
-            Payment verified successfully.
-          </Text>
+          <Text style={styles.success}>Payment verified successfully.</Text>
         ) : (
           <Pressable
             style={styles.button}
@@ -247,20 +221,13 @@ export default function UpgradeScreen() {
             {loading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text style={styles.buttonText}>
-                Pay ₹99
-              </Text>
+              <Text style={styles.buttonText}>Pay ₹99</Text>
             )}
           </Pressable>
         )}
 
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>
-            Go back
-          </Text>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backText}>Go back</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -270,34 +237,34 @@ export default function UpgradeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
   },
 
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 28,
   },
 
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#1e293b",
+    textAlign: "center",
   },
 
   price: {
     fontSize: 48,
-    fontWeight: 'bold',
-    color: '#2563eb',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#2563eb",
+    textAlign: "center",
     marginTop: 24,
   },
 
   subtitle: {
     fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
+    color: "#64748b",
+    textAlign: "center",
     marginTop: 8,
   },
 
@@ -308,52 +275,52 @@ const styles = StyleSheet.create({
 
   feature: {
     fontSize: 17,
-    color: '#334155',
+    color: "#334155",
   },
 
   button: {
-    backgroundColor: '#2563eb',
+    backgroundColor: "#2563eb",
     padding: 17,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   buttonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 17,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 
   backButton: {
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   backText: {
-    color: '#64748b',
+    color: "#64748b",
     fontSize: 15,
   },
 
   success: {
-    color: '#15803d',
-    textAlign: 'center',
-    fontWeight: '600',
+    color: "#15803d",
+    textAlign: "center",
+    fontWeight: "600",
   },
 
   overlay: {
-    position: 'absolute',
+    position: "absolute",
     zIndex: 2,
     top: 0,
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#ffffffee',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#ffffffee",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   statusText: {
     marginTop: 12,
-    color: '#1e293b',
+    color: "#1e293b",
   },
 });
